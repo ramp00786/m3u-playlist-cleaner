@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cleaner — M3U Toolkit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+              400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3'
+            }
+          },
+          boxShadow: { glow: '0 10px 30px -10px rgba(79,70,229,0.45)' }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-feature-settings: "cv11", "ss01"; }
+    .fade-in { animation: fadeIn .4s ease both; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    ::-webkit-scrollbar { height: 10px; width: 10px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+  <!-- Decorative background -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute -top-32 -left-24 w-96 h-96 bg-brand-300/30 rounded-full blur-3xl"></div>
+    <div class="absolute top-40 -right-24 w-96 h-96 bg-fuchsia-300/20 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Menu Bar -->
+  <nav class="sticky top-0 z-40 backdrop-blur-xl bg-white/70 border-b border-white/60 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex items-center justify-between h-16">
+        <a href="/" class="flex items-center gap-2.5 font-extrabold text-slate-900">
+          <span class="inline-flex items-center justify-center h-9 px-3 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs shadow-glow">M3U</span>
+          <span class="tracking-tight">Toolkit</span>
+        </a>
+        <div class="flex items-center gap-1 p-1 rounded-2xl bg-slate-100/80">
+          <a href="/" class="px-4 py-1.5 text-sm rounded-xl font-semibold bg-white text-brand-700 shadow-sm">Cleaner</a>
+          <a href="/merge" class="px-4 py-1.5 text-sm rounded-xl font-semibold text-slate-500 hover:text-slate-800 transition-colors">Merge M3U</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 py-10">
+    <!-- Header -->
+    <header class="mb-8 fade-in">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-semibold ring-1 ring-brand-100 mb-3">
+        <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span> Playlist Cleaner
+      </span>
+      <h1 class="text-4xl font-extrabold tracking-tight text-slate-900">Clean your M3U playlist</h1>
+      <p class="text-slate-500 mt-2 max-w-2xl">Upload a playlist, check every link concurrently in real time, then remove dead channels and download a fresh file.</p>
+    </header>
+
+    <!-- Upload Card -->
+    <section id="upload-section" class="fade-in bg-white/80 backdrop-blur rounded-3xl shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/70 p-6 sm:p-8 mb-8">
+      <!-- Row 1: Source toggle + input -->
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-semibold text-slate-700">M3U Source</label>
+          <div class="inline-flex p-1 rounded-xl bg-slate-100" id="source-toggle">
+            <button type="button" data-mode="url" class="source-tab px-3.5 py-1 text-xs font-semibold rounded-lg bg-white text-brand-700 shadow-sm">URL</button>
+            <button type="button" data-mode="file" class="source-tab px-3.5 py-1 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-colors">File</button>
+          </div>
+        </div>
+        <div id="url-wrap">
+          <input type="url" id="url-input" placeholder="https://example.com/playlist.m3u" autocomplete="off"
+            class="block w-full text-sm text-slate-700 border border-slate-200 rounded-2xl px-3.5 py-3 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500">
+          <p class="mt-1.5 text-xs text-slate-400">Paste a direct link to an online .m3u / .m3u8 playlist.</p>
+        </div>
+        <div id="file-wrap" class="hidden">
+          <input type="file" id="file-input" accept=".m3u,.m3u8"
+            class="block w-full text-sm text-slate-600 cursor-pointer file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-brand-600 file:text-white hover:file:bg-brand-700 file:cursor-pointer border border-slate-200 rounded-2xl p-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/40">
+        </div>
+      </div>
+
+      <!-- Row 2: Options + Check -->
+      <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="md:w-40">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Timeout (seconds)</label>
+          <select id="timeout-select" class="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 outline-none">
+            <option value="5">5</option>
+            <option value="8" selected>8</option>
+            <option value="12">12</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+        <div class="md:w-44">
+          <label class="block text-sm font-semibold text-slate-700 mb-2">Concurrent</label>
+          <select id="concurrent-select" class="w-full rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 outline-none">
+            <option value="3">3 at a time</option>
+            <option value="5" selected>5 at a time</option>
+            <option value="10">10 at a time</option>
+          </select>
+        </div>
+        <label class="inline-flex items-center gap-3 cursor-pointer select-none md:pb-2.5 md:flex-1">
+          <span class="relative inline-flex shrink-0">
+            <input type="checkbox" id="skip-non-http" checked class="sr-only peer">
+            <span class="w-11 h-6 bg-slate-200 rounded-full peer-checked:bg-brand-600 transition-colors"></span>
+            <span class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></span>
+          </span>
+          <span class="text-sm font-medium text-slate-700">Skip non-HTTP URLs (RTMP, RTSP)</span>
+        </label>
+        <button id="check-btn" disabled
+          class="inline-flex items-center justify-center gap-2 px-7 py-3 bg-gradient-to-br from-brand-500 to-brand-700 text-white font-semibold rounded-2xl shadow-glow hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Check
+        </button>
+      </div>
+      <p id="upload-error" class="mt-4 text-sm text-red-600 hidden"></p>
+      <p id="file-info" class="mt-4 text-sm text-slate-500 hidden"></p>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results-section" class="hidden fade-in">
+      <!-- Stats -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-slate-200/70 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-slate-900" id="stat-total">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Total</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-emerald-200 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-emerald-600" id="stat-online">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Online</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-sky-200 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-sky-600" id="stat-reachable">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Reachable</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-amber-200 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-amber-500" id="stat-timeout">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Timeout</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-red-200 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-red-500" id="stat-offline">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Offline</div>
+        </div>
+        <div class="bg-white/80 backdrop-blur rounded-2xl ring-1 ring-slate-200/70 p-4 shadow-sm">
+          <div class="text-3xl font-extrabold text-slate-400" id="stat-pending">0</div>
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-wide mt-1">Pending</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div id="progress-container" class="hidden mb-5">
+        <div class="flex justify-between text-sm font-medium text-slate-600 mb-1.5">
+          <span id="progress-label">Checking channels...</span>
+          <span id="progress-percent">0%</span>
+        </div>
+        <div class="w-full bg-slate-200/70 rounded-full h-2.5 overflow-hidden">
+          <div id="progress-bar" class="bg-gradient-to-r from-brand-500 to-brand-700 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Filters & Bulk Actions -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm ring-1 ring-slate-200/70 p-4 mb-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-wrap gap-1.5" id="filter-tabs">
+            <button data-filter="all" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full bg-brand-600 text-white shadow-sm">All</button>
+            <button data-filter="working" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Working</button>
+            <button data-filter="issues" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Issues</button>
+            <button data-filter="online" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Online</button>
+            <button data-filter="reachable" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Reachable</button>
+            <button data-filter="timeout" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Timeout</button>
+            <button data-filter="offline" class="filter-tab px-4 py-2 text-sm font-semibold rounded-full text-slate-600 hover:bg-slate-100">Offline</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="bulk-delete-btn" disabled
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-red-50 text-red-600 ring-1 ring-red-200 rounded-xl hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Delete Selected
+            </button>
+            <button id="clean-btn"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-amber-50 text-amber-600 ring-1 ring-amber-200 rounded-xl hover:bg-amber-100 transition-colors"
+              title="Remove all channels except Online (working)">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+              Clean Playlist
+            </button>
+            <button id="download-btn"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-sm transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Download Cleaned
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Table -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-sm ring-1 ring-slate-200/70 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500">
+              <tr>
+                <th class="px-4 py-3.5 text-left w-10">
+                  <input type="checkbox" id="select-all" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                </th>
+                <th class="px-4 py-3.5 text-left w-12 font-semibold">#</th>
+                <th class="px-4 py-3.5 text-left w-32 font-semibold">Status</th>
+                <th class="px-4 py-3.5 text-left font-semibold">Name &amp; Link</th>
+                <th class="px-4 py-3.5 text-left w-40 font-semibold">Group</th>
+                <th class="px-4 py-3.5 text-left w-52 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="channel-tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty-filter" class="hidden p-10 text-center text-slate-400">No channels match the current filter.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Player Modal -->
+  <div id="player-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" id="player-backdrop"></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden ring-1 ring-slate-200 fade-in">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <h3 id="player-title" class="font-bold text-slate-900 truncate">Web Player</h3>
+          <button id="player-close" class="w-8 h-8 inline-flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="bg-black aspect-video">
+          <video id="player-video" class="w-full h-full" controls playsinline></video>
+        </div>
+        <div class="px-5 py-3 text-xs text-slate-400 truncate" id="player-url"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
