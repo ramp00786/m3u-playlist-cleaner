@@ -221,6 +221,22 @@ m3u-playlist-cleaner/
 
 ---
 
+## Support the Developer
+
+If **M3U Toolkit** saved you time, consider supporting its development. Every contribution keeps the project alive and motivates new features.
+
+<div align="center">
+
+<img src="assets/support-qr.png" alt="Support the developer - PhonePe / UPI QR code" width="240" />
+
+**Scan to pay via any UPI app** (PhonePe, Google Pay, Paytm, BHIM)
+
+Thank you for your support!
+
+</div>
+
+---
+
 <div align="center">
 
 **Made for IPTV playlist maintenance**
